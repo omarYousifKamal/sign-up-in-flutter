@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "264079899679",
+    "project_id": "sign-in-v3",
+    "storage_bucket": "sign-in-v3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264079899679:android:5b62c9262b7374a93da92a",
+        "android_client_info": {
+          "package_name": "com.example.google_sign_in_v3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "264079899679-ckg04s5j4kg0q942quatusqprdmkb4nj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfplR3CDmPQWGUTCg4UzyojczTe-T043s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "264079899679-ckg04s5j4kg0q942quatusqprdmkb4nj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
