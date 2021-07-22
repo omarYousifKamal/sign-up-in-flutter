@@ -18,6 +18,9 @@ class AuthApp extends StatefulWidget {
 class _AuthAppState extends State<AuthApp> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final GlobalKey<FormState> _key = GlobalKey<FormState>();
+  String errorMessage = '';
+  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
@@ -27,95 +30,133 @@ class _AuthAppState extends State<AuthApp> {
           title:
               Text('Auth User (Logged' + (user == null ? ' out' : 'in') + ')'),
         ),
-        body: Center(
-            child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                        email: emailController.text,
-                        password: passwordController.text);
-
-                    setState(() {});
-                  },
-                  child: Text('Sing up'),
+        body: Form(
+          key: _key,
+          child: Center(
+              child: Column(
+            children: [
+              TextFormField(
+                controller: emailController,
+                validator: validateEmail,
+              ),
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                validator: validatePassword,
+              ),
+              Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Center(
+                  child: Text(
+                    errorMessage,
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await FirebaseAuth.instance.signInWithEmailAndPassword(
-                        email: emailController.text,
-                        password: passwordController.text);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SecondRoute()),
-                    );
-                    setState(() {});
-                  },
-                  child: Text('Sing in'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await FirebaseAuth.instance.signOut();
-                    setState(() {});
-                  },
-                  child: Text('log out'),
-                ),
-              ],
-            ),
-          ],
-        )),
-      ),
-    );
-  }
-}
-
-class FirstRoute extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('First Route'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          child: Text('Open route'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => SecondRoute()),
-            );
-          },
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                      child: isLoading
+                          ? CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : Text('Sign Up'),
+                      onPressed: user != null
+                          ? null
+                          : () async {
+                              setState(() {
+                                isLoading = true;
+                                errorMessage = '';
+                              });
+                              {}
+                              if (_key.currentState!.validate()) {
+                                try {
+                                  await FirebaseAuth.instance
+                                      .createUserWithEmailAndPassword(
+                                    email: emailController.text,
+                                    password: passwordController.text,
+                                  );
+                                } on FirebaseAuthException catch (error) {
+                                  errorMessage = error.message!;
+                                }
+                                setState(() => isLoading = false);
+                                {}
+                              }
+                            }),
+                  ElevatedButton(
+                      child: isLoading
+                          ? CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : Text('Sign In'),
+                      onPressed: user != null
+                          ? null
+                          : () async {
+                              if (_key.currentState!.validate()) {
+                                try {
+                                  await FirebaseAuth.instance
+                                      .signInWithEmailAndPassword(
+                                    email: emailController.text,
+                                    password: passwordController.text,
+                                  );
+                                  errorMessage = '';
+                                } on FirebaseAuthException catch (error) {
+                                  errorMessage = error.message!;
+                                }
+                                setState(() {});
+                              }
+                            }),
+                  ElevatedButton(
+                    onPressed: user == null
+                        ? null
+                        : () async {
+                            try {
+                              await FirebaseAuth.instance.signOut();
+                            } on FirebaseAuthException catch (error) {
+                              errorMessage = error.message!;
+                            }
+                            setState(() {});
+                          },
+                    child: isLoading
+                        ? CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                        : Text('log out'),
+                  ),
+                ],
+              ),
+            ],
+          )),
         ),
       ),
     );
   }
 }
 
-class SecondRoute extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Second Route"),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Go back!'),
-        ),
-      ),
-    );
-  }
+String? validateEmail(String? formEmail) {
+  if (formEmail == null || formEmail.isEmpty)
+    return 'E-mail address is required.';
+
+  String pattern = r'\w+@\w+\.\w+';
+  RegExp regex = RegExp(pattern);
+  if (!regex.hasMatch(formEmail)) return 'Invalid E-mail Address format.';
+
+  return null;
+}
+
+String? validatePassword(String? formPassword) {
+  if (formPassword == null || formPassword.isEmpty)
+    return 'Password is required.';
+
+  String pattern =
+      r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
+  RegExp regex = RegExp(pattern);
+  if (!regex.hasMatch(formPassword))
+    return '''
+      Password must be at least 8 characters,
+      include an uppercase letter, number and symbol.
+      ''';
+
+  return null;
 }
